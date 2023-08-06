@@ -15,7 +15,7 @@ overview: |
   The eShopOnWeb will communicate with the logging service and Redis in the sandbox.
 
   For convinience, Web RDP (guacamole) is integrated to access the Windows VM
-  using web. Click the endpoint [rdp]({{endpoints.rdp.url}}) to access the Windows desktop
+  using web. Click the endpoint [windows]({{endpoints.windows.url}}) to access the Windows desktop
   or click the resource `windows` to see the detailed instructions.
 endpoints:
   - name: web
@@ -25,7 +25,7 @@ endpoints:
           backend:
             target: dev
             port: web
-  - name: rdp
+  - name: windows
     http:
       routes:
         - path_prefix: /
