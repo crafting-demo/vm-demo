@@ -108,12 +108,18 @@ dependencies:
   - name: redis
     service_type: redis
     version: "7.0"
+  - name: logdb
+    service_type: mysql
+    properties:
+      database: logs
+      username: logs
+      password: logs
   - name: guacamoledb
     service_type: mysql
     properties:
       database: guacamole
-      password: guacamole
       username: guacamole
+      password: guacamole
     snapshot: guacamoledb-r1
 resources:
   - name: windows
