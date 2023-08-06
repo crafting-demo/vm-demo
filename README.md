@@ -20,5 +20,5 @@ The eShopOnWeb will communicate with the logging service and Redis in the sandbo
 
 For convinience, Web RDP ([guacamole](https://guacamole.apache.org)) is integrated to 
 access the Windows on the web.
-Click the endpoint [rdp]({{endpoints.rdp.url}}) to access the Windows desktop
+Click the endpoint `rdp` to access the Windows desktop
 or click the resource `windows` to see the detailed instructions.
