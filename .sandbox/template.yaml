@@ -53,15 +53,15 @@ workspaces:
                   build:
                     cmd: |
                       REMOTE=$(jq -r ".public_dns.value" /run/sandbox/fs/resources/windows/state)
-                      scp -r -T -q -o StrictHostKeyChecking=no dotnet/eShopOnWeb "Administrator@$REMOTE:/c:/Users/Administrator"
-                      ssh "Administrator@$REMOTE" "powershell -file c:/Users/Administrator/eShopOnWeb/scripts/build.ps1"
+                      scp -r -T -q -o StrictHostKeyChecking=no dotnet/eShopOnWeb "Administrator@$REMOTE:/c:/Users/Administrator/Desktop"
+                      ssh "Administrator@$REMOTE" "powershell -file c:/Users/Administrator/Desktop/eShopOnWeb/scripts/build.ps1"
                 daemons:
                   eshop:
                     run:
                       cmd: |
                         REMOTE=$(jq -r ".public_dns.value" /run/sandbox/fs/resources/windows/state)
                         flock /tmp/eshop.lock \
-                          --command 'ssh Administrator@'"$REMOTE"' "powershell -file c:/Users/Administrator/eShopOnWeb/scripts/run.ps1"'
+                          --command 'ssh Administrator@'"$REMOTE"' "powershell -file c:/Users/Administrator/Desktop/eShopOnWeb/scripts/run.ps1"'
                   logging:
                     run:
                       cmd: ./gradlew bootRun
