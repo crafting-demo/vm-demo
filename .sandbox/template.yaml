@@ -50,18 +50,18 @@ workspaces:
           overlays:
             - inline:
                 hooks:
-                  post-checkout:
+                  build:
                     cmd: |
                       REMOTE=$(jq -r ".public_dns.value" /run/sandbox/fs/resources/windows/state)
-                      scp -r -T -q -o StrictHostKeyChecking=no "$PWD" "Administrator@$REMOTE:/c:/Users/Administrator"
-                      ssh "Administrator@$REMOTE" "powershell -file c:/Users/Administrator/vm-demo/.sandbox/remote/build.ps1"
+                      scp -r -T -q -o StrictHostKeyChecking=no dotnet/eShopOnWeb "Administrator@$REMOTE:/c:/Users/Administrator"
+                      ssh "Administrator@$REMOTE" "powershell -file c:/Users/Administrator/eShopOnWeb/scripts/build.ps1"
                 daemons:
                   eshop:
                     run:
                       cmd: |
                         REMOTE=$(jq -r ".public_dns.value" /run/sandbox/fs/resources/windows/state)
                         flock /tmp/eshop.lock \
-                          --command 'ssh Administrator@'"$REMOTE"' "powershell -file c:/Users/Administrator/vm-demo/.sandbox/remote/run.ps1"'
+                          --command 'ssh Administrator@'"$REMOTE"' "powershell -file c:/Users/Administrator/eShopOnWeb/scripts/run.ps1"'
                   logging:
                     run:
                       cmd: ./gradlew bootRun
@@ -86,7 +86,7 @@ workspaces:
                           guacamole/guacd:1.4.0
     packages:
       - name: openjdk
-        version: '~17'
+        version: '~14'
     base_snapshot: oci://us-docker.pkg.dev/crafting-dev/sandbox/shared/workspace:latest
     probes:
       readiness:
