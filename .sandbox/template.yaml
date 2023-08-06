@@ -1,3 +1,22 @@
+overview: |
+  # Development with a Windows VM
+
+  This sandbox is a development environment containing:
+
+  - Dotnet based eShopOnWeb built and running in an EC2 Windows VM;
+  - Java based logging service built and running in a sandbox workspace;
+  - Redis running in a sandbox serving as an in-memory cache for eShopOnWeb.
+
+  The sandbox automatically manages the EC2 Windows VM based on the lifecycle
+  and establishes the communication between eShopOnWeb, logging service and Redis.
+
+  During startup, the `dev` workspace will sync source code to the Windows VM,
+  built and launches remotely, controlled by a daemon in the workspace.
+  The eShopOnWeb will communicate with the logging service and Redis in the sandbox.
+
+  For convinience, Web RDP (guacamole) is integrated to access the Windows VM
+  using web. Click the endpoint [rdp]({{endpoints.rdp.url}}) to access the Windows desktop
+  or click the resource `windows` to see the detailed instructions.
 endpoints:
   - name: web
     http:
@@ -86,6 +105,9 @@ workspaces:
     env:
       - AWS_CONFIG_FILE=/run/sandbox/fs/secrets/shared/aws-config
 dependencies:
+  - name: redis
+    service_type: redis
+    version: "7.0"
   - name: guacamoledb
     service_type: mysql
     properties:
@@ -93,28 +115,6 @@ dependencies:
       password: guacamole
       username: guacamole
     snapshot: guacamoledb-r1
-  - name: redis
-    service_type: redis
-    version: "7.0"
-overview: |
-  # Development with a Windows VM
-
-  This sandbox is a development environment containing:
-
-  - Dotnet based eShopOnWeb built and running in an EC2 Windows VM;
-  - Java based logging service built and running in a sandbox workspace;
-  - Redis running in a sandbox serving as an in-memory cache for eShopOnWeb.
-
-  The sandbox automatically manages the EC2 Windows VM based on the lifecycle
-  and establishes the communication between eShopOnWeb, logging service and Redis.
-
-  During startup, the `dev` workspace will sync source code to the Windows VM,
-  built and launches remotely, controlled by a daemon in the workspace.
-  The eShopOnWeb will communicate with the logging service and Redis in the sandbox.
-
-  For convinience, Web RDP (guacamole) is integrated to access the Windows VM
-  using web. Click the endpoint [rdp]({{endpoints.rdp.url}}) to access the Windows desktop
-  or click the resource `windows` to see the detailed instructions.
 resources:
   - name: windows
     brief: EC2 Windows VM
