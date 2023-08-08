@@ -23,18 +23,18 @@ endpoints:
       routes:
         - path_prefix: /
           backend:
-            target: dev
+            target: eshop
             port: web
   - name: windows
     http:
       routes:
         - path_prefix: /
           backend:
-            target: dev
+            target: eshop
             port: guacamole
       path: /guacamole/
 workspaces:
-  - name: dev
+  - name: eshop
     ports:
       - name: web
         port: 5001
@@ -60,18 +60,13 @@ workspaces:
                     run:
                       cmd: |
                         REMOTE=$(jq -r ".public_dns.value" /run/sandbox/fs/resources/windows/state)
-                        flock /tmp/eshop.lock \
-                          --command 'ssh Administrator@'"$REMOTE"' "powershell -file c:/Users/Administrator/Desktop/eShopOnWeb/scripts/run.ps1"'
-                  logging:
-                    run:
-                      cmd: ./gradlew bootRun
-                      dir: java/logging
+                        ssh "Administrator@$REMOTE" "powershell -file c:/Users/Administrator/Desktop/eShopOnWeb/scripts/run.ps1"
                   portforward:
                     run:
                       cmd: |
                         REMOTE=$(jq -r ".public_dns.value" /run/sandbox/fs/resources/windows/state)
                         ssh -L 0.0.0.0:5001:localhost:5001 \
-                          -R 3000:localhost:3000 \
+                          -R 3000:logging:3000 \
                           -R 6379:redis:6379 \
                           -N "Administrator@$REMOTE"
                   rdp:
@@ -84,9 +79,6 @@ workspaces:
                         docker run --rm --name guacd -a STDOUT -a STDERR \
                           -v "$HOME:/drive$HOME" \
                           guacamole/guacd:1.4.0
-    packages:
-      - name: openjdk
-        version: '~14'
     base_snapshot: oci://us-docker.pkg.dev/crafting-dev/sandbox/shared/workspace:latest
     probes:
       readiness:
@@ -96,6 +88,33 @@ workspaces:
             path: /guacamole/
     wait_for:
       - windows
+  - name: logging
+    ports:
+      - name: api
+        port: 3000
+        protocol: HTTP/TCP
+    checkouts:
+      - path: vm-demo
+        repo:
+          git: https://github.com/crafting-demo/vm-demo
+        manifest:
+          overlays:
+            - inline:
+                daemons:
+                  logging:
+                    run:
+                      cmd: ./gradlew bootRun
+                      dir: java/logging
+    packages:
+      - name: openjdk
+        version: ~17
+    port_forward_rules:
+      - local: "3306"
+        remote:
+          target: logdb
+          port: mysql
+    base_snapshot: desktop-r1
+    home_snapshot: home-java-dev-r1
   - name: provisioner
     checkouts:
       - path: vm-demo
