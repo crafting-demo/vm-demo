@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# Crafting CLI extension for development on a local machine paired
+# with a Crafting sandbox in the cloud.
+#
+# cs dev start
+#   This will start (or resume an existing one) sandbox under the current user's name;
+# cs dev connect
+#   This will virtually "replace" a workload in the sandbox with the local one being
+#   developed in a local IDE, by intercepting the incoming traffic from the sandbox and
+#   forwarding the outgoing traffic to the sandbox, so the local process is able to run
+#   with all dependencies in the cloud and integrated with E2E flows;
+# cs dev sync
+#   Sync the local changes to the workspace in the sandbox so the workspace will have
+#   the latest, uncommitted changes and rebuild/relaunch for previewing.
+
+SCRIPT_DIR="$(readlink -nf "${BASH_SOURCE[0]%/*}")"
+
+. "$SCRIPT_DIR/functions.sh"
+
+SRC_DIR="$(readlink -nf "$SCRIPT_DIR/../..")"
+SESSION_DIR="$(readlink -nf "$SCRIPT_DIR/../.session")"
+SANDBOX_NAME_FILE="$SESSION_DIR/sandbox"
+SANDBOX_TEMPLATE=vm-demo
+SANDBOX_NAME=
+
+DEFAULT_WORKSPACE=logging
+SRC_DIR_IN_WS=vm-demo
+
+export CLI_SCRIPT=y
+[[ -n "$CRAFTING_SANDBOX_ORG" ]] || export CRAFTING_SANDBOX_ORG=demo-cloud
+
+function _dev_require_sandbox() {
+  SANDBOX_NAME="$(cat "$SANDBOX_NAME_FILE" 2>/dev/null)"
+  [[ -n "$SANDBOX_NAME" ]] || fatal "Dev sandbox not created, please use cs dev start"
+}
+
+function _dev_set_sandbox() {
+  local name="${1:-$SANDBOX_NAME}"
+  [[ -n "$name" ]] || return
+  mkdir -p "$SESSION_DIR"
+  echo -n "$name" >"$SANDBOX_NAME_FILE"
+}
+
+# Start a sandbox using the specified name or under the current user's name.
+# If the sandbox already exists, this command will resume it.
+function dev_start() {
+  SANDBOX_NAME="$1"
+  [[ -n "$SANDBOX_NAME" ]] || SANDBOX_NAME="$(cat "$SANDBOX_NAME_FILE" 2>/dev/null)"
+  [[ -n "$SANDBOX_NAME" ]] || SANDBOX_NAME="dev-$USER"
+  if cs sandbox show "$SANDBOX_NAME" 2>/dev/null; then
+    # Sandbox already exists. Resume it.
+    cs sandbox resume "$SANDBOX_NAME" || exit 1
+  else
+    cs sandbox create "$SANDBOX_NAME" -t "$SANDBOX_TEMPLATE" || exit 1
+  fi
+  _dev_set_sandbox
+}
+
+# Start interception and outgoing traffic forwarding.
+function dev_connect() {
+  _dev_require_sandbox
+  local ws="${1:-$DEFAULT_WORKSPACE}"
+  exec cs port-forward -W "$SANDBOX_NAME/$ws"
+}
+
+# Sync local changes to the workspace in the sandbox.
+function dev_sync() {
+  _dev_require_sandbox
+  local ws="${1:-$DEFAULT_WORKSPACE}"
+  exec cs mutagen "$SRC_DIR" "$SANDBOX_NAME/$ws:$SRC_DIR_IN_WS" -- -m one-way-replica
+}
+
+# Use the specified sandbox.
+function dev_use() {
+  local name="$1"
+  [[ -n "$name" ]] || fatal "Please specify a sandbox name."
+  cs sandbox show "$name" 2>/dev/null || fatal "Sandbox $name not found or inaccessible."
+  echo "Using sandbox $name"
+  _dev_set_sandbox "$name"
+}
+
+CMD="$1"
+shift
+
+case "$CMD" in
+  start|s) dev_start "$@" ;;
+  connect|c) dev_connect "$@" ;;
+  sync) dev_sync "$@" ;;
+  use) dev_use "$@" ;;
+  *) fatal "Unknown command" ;;
+esac
