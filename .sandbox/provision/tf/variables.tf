@@ -1,7 +1,7 @@
 variable "launch_template_name" {
-  default = "large-windows-vs"
+  default = "crafting-windows-vm"
 }
 
 variable "keypair_file" {
-  default = "/run/sandbox/fs/secrets/shared/ec2-keypair-shared.pem"
+  default = "/run/sandbox/fs/secrets/shared/yuan-crafting-shared.pem"
 }
